@@ -17,8 +17,18 @@ commands:
       - run:
           name: install ansible on ubuntu
           command: |
-            sudo apt update
-            sudo apt install ansible
+            sudo apt update -y
+            sudo apt install -y ansible
+
+  install_nodejs:
+    description: install nodejs v13
+    steps:
+      - run:
+          name: install nodejs v13
+          command: |
+            curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash - &&\
+            apt-get install -y nodejs
+
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
@@ -216,7 +226,7 @@ jobs:
 
   run-migrations:
     docker:
-      - image: cimg/node:14.21.1
+      - image: cimg/node:13.8.0
     steps:
       - checkout
       - install_aws_cli
@@ -225,7 +235,11 @@ jobs:
           command: |
             cd backend
             npm install
+            npm audit fix --audit-level=critical --force
+            npm audit fix --audit-level=critical --force
             npm run migrations > migration_dump.txt
+            pwd 
+            ls -la
       - run:
           name: Send migration results to kvdb.io
           command: |
@@ -236,27 +250,32 @@ jobs:
 
       - destroy-environment
       - revert-migrations
-#  deploy-frontend:
-#    docker:
-#      # Docker image here that supports AWS CLI
-#    steps:
-#      # Checkout code from git
-#      - run:
-#          name: Install dependencies
-#          command: |
-#            # your code here
-#      - run:
-#          name: Get backend url
-#          command: |
-#            # your code here
-#            export API_URL="http://${BACKEND_IP}:3030"
-#            echo "${API_URL}"
-#      - run:
-#          name: Deploy frontend objects
-#          command: |
-#            # your code here
-#      # Here's where you will add some code to rollback on failure
-#
+
+  deploy-frontend:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - install_nodejs
+      - restore_cache:
+          keys: [frontend-build]
+      - run:
+          name: Install dependencies
+          command: |
+            cd frontend
+            npm install
+      - run:
+          name: Get backend url
+          command: |
+            # your code here
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+      - run:
+          name: Deploy frontend objects
+          command: |
+            # your code here
+      # Here's where you will add some code to rollback on failure
+
 #  deploy-backend:
 #    docker:
 #      # Docker image here that supports Ansible
