@@ -235,8 +235,6 @@ jobs:
           command: |
             cd backend
             npm install
-            npm audit fix --audit-level=critical --force
-            npm audit fix --audit-level=critical --force
             npm run migrations > migration_dump.txt
             pwd 
             ls -la
@@ -304,9 +302,18 @@ jobs:
             cd backend
             npm install
       - run:
+          name: package backend files
+          command: |
+            cd backend
+            npm run build
+            tar -czf artifact.tar.gz dist/* package*
+            cp ../backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+      - run:
           name: Deploy backend
           command: |
-            # your code here
+            export TYPEORM_MIGRATIONS_DIR=./migrations
+            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS=./migrations/*.ts
       # Here's where you will add some code to rollback on failure
 #
 #  smoke-test:
