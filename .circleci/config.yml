@@ -230,6 +230,8 @@ jobs:
     steps:
       - checkout
       - install_aws_cli
+      - restore_cache:
+          keys: [ backend-build ]
       - run:
           name: Run migrations
           command: |
@@ -314,7 +316,11 @@ jobs:
             export TYPEORM_MIGRATIONS_DIR=./migrations
             export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
             export TYPEORM_MIGRATIONS=./migrations/*.ts
-      # Here's where you will add some code to rollback on failure
+            cd .circleci/ansible
+            ansible-playbook -i inventory.txt deploy-backend.yml
+
+      - destroy-environment
+      - revert-migrations
 #
 #  smoke-test:
 #    docker:
@@ -398,8 +404,8 @@ workflows:
           requires: [configure-infrastructure]
       - deploy-frontend:
           requires: [run-migrations]
-#      - deploy-backend:
-#          requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations]
 #      - smoke-test:
 #          requires: [deploy-backend, deploy-frontend]
 #      - cloudfront-update:
