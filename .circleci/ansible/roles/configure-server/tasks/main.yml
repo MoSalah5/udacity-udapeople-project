@@ -11,5 +11,3 @@
   npm:
     name: pm2
     global: yes
-  args:
-    warn: false
