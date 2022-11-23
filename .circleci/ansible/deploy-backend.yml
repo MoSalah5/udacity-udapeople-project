@@ -28,7 +28,7 @@
         timeout: 600
 
     - name: "update packages"
-        shell: |
+      shell: |
           apt -y update
       become: true
 
