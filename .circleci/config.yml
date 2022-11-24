@@ -226,19 +226,23 @@ jobs:
 
   run-migrations:
     docker:
-      - image: cimg/base:stable
+#      - image: cimg/base:stable
+      -  image: cimg/node:13.8.0
     steps:
       - checkout
       - install_aws_cli
-      - install_nodejs
+#      - install_nodejs
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: Run migrations
           command: |
             cd backend
             npm install
-            npm run migrations > migration_dump.txt
             pwd 
             ls -la
+            npm run migrations > migration_dump.txt
+            npm audit fix
       - run:
           name: Send migration results to kvdb.io
           command: |
@@ -300,7 +304,7 @@ jobs:
           name: Install dependencies
           command: |
             cd backend
-            npm install
+            npm install --force
       - run:
           name: package backend files
           command: |
