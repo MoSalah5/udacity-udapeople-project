@@ -257,6 +257,7 @@ jobs:
            then
                curl https://kvdb.io/Punbcdp1sT3t2HVN6rLWCW/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
            fi
+      - destroy-environment
       - revert-migrations
 
   deploy-frontend:
@@ -266,13 +267,10 @@ jobs:
       - checkout
       - install_nodejs
       - install_aws_cli
-      - restore_cache:
-          keys: [frontend-build]
-      - run:
-          name: Install dependencies
-          command: |
-            cd frontend
-            npm install
+#      - restore_cache:
+#          keys: [frontend-build]
+      - attach_workspace:
+          at: ~/
       - run:
           name: Get backend url
           command: |
@@ -287,7 +285,9 @@ jobs:
           name: Deploy frontend objects
           command: |
             cd frontend
+            npm install
             npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
 
       - destroy-environment
@@ -350,7 +350,7 @@ jobs:
             sudo curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash - &&\
             sudo apt-get install -y nodejs
       - run:
-          name: Get backend url
+          name: Backend smoke test.
           command: |
             BACKEND_IP=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
@@ -358,15 +358,14 @@ jobs:
             --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo $API_URL
-      - run:
-          name: Backend smoke test.
-          command: |
-            if curl -s "$API_URL/api/status" | grep -i "ok"
+            sleep 5
+            if curl "${API_URL}/api/status" | grep "ok"
             then
-              exit 0
+                return 0
             else
-              exit 1
+                return 1
             fi
+
       - run:
           name: Frontend smoke test.
           command: |
@@ -379,7 +378,7 @@ jobs:
               exit 1
             fi
 
-#      - destroy-environment
+      - destroy-environment
       - revert-migrations
 
   cloudfront-update:
@@ -414,7 +413,7 @@ jobs:
             --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --stack-name InitialStack
 
-#      - destroy-environment
+      - destroy-environment
       - revert-migrations
 
   cleanup:
