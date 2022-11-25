@@ -236,6 +236,11 @@ jobs:
 #      - restore_cache:
 #          keys: [backend-build]
       - run:
+          name: check environment variables
+          command: |
+            echo $TYPEORM_HOST
+            echo $TYPEORM_MIGRATIONS_DIR
+      - run:
           name: Run migrations
           command: |
             cd backend
